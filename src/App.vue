@@ -71,14 +71,14 @@
         this.logPrint(`${moment().format('HH:mm:ss')}  开始提交`)
         let timer = setInterval(() => {
           this.formAction()
-        }, 500)
+        }, 300)
         setTimeout(() => {
           clearInterval(timer)
 					setTimeout(()=>{
 						this.logPrint(`${moment().format('HH:mm:ss')}  运行结束`)
 					},1000)
 					this.$refs.submitBtn.innerHTML='运行结束'
-        }, 5000)
+        }, 3000)
       },
       computeTimeDiff() {
         //计算时间误差
