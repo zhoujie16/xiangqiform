@@ -9,6 +9,13 @@
     <div class="text-left">手机</div>
     <input v-model="mobile" type="text" placeholder="手机号">
     <button @tap="startHandleClick" type="button" class="mui-btn mui-btn-blue">开始</button>
+    <div class="log-div text-left">
+      <div class="mui-scroll-wrapper">
+        <div class="mui-scroll">
+          <div v-for="item in logInfoArr">{{item}}</div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -24,14 +31,21 @@
         name: '测试',
         mobile: '111222333',
         // timeSel: moment().format('YYYY-MM-DDTHH:mm'),
-        timeSel: moment().format('YYYY-MM-DDT08:59:59'),
+        timeSel: moment().format('YYYY-MM-28T08:59:59'),
         time_wucha: '',//本地时间和北京时间 快 毫秒
         time_now: moment(),//当前时间 动态变化 到点停止
+        logInfoArr:[],
+      }
+    },
+    computed:{
+      logInfoArr_res(){
+        return this.logInfoArr.slice(0,50)
       }
     },
     mounted() {
       window._self = this
-      console.log('页面加载完成', moment().format('YYYY-MM-DD HH:mm:ss'))
+      mui('.mui-scroll-wrapper').scroll()
+      this.logPrint(`页面加载完成, ${moment().format('YYYY-MM-DD HH:mm:ss')}`)
 
     },
     methods: {
@@ -40,17 +54,17 @@
           this.time_now = moment()
           if (this.time_now.diff(moment(this.timeSel)) > 0) {
             //时间到了
-            console.log('时间到了', this.time_now.format('YYYY-MM-DD HH:mm:ss'))
+            this.logPrint(`时间到了, ${this.time_now.format('YYYY-MM-DD HH:mm:ss')}`)
             this.updateStart()
             clearInterval(timer)
           } else {
-            console.log(`当前时间: ${this.time_now.format('YYYY-MM-DD HH:mm:ss')}`)
+            this.logPrint(`当前时间: ${this.time_now.format('YYYY-MM-DD HH:mm:ss')}`)
           }
         }, 500)
       },
       //
       updateStart() {
-        console.log('开始提交')
+        this.logPrint('开始提交')
         let timer = setInterval(() => {
           this.formAction()
         }, 500)
@@ -64,8 +78,8 @@
           let time_bg = moment(date)
           let time_local = moment()
           this.time_wucha = time_local.diff(time_bg)
-          console.log('北京时间', time_bg.format('YYYY-MM-DD HH:mm:ss'))
-          console.log(`本地时间比北京时间快 ${this.time_wucha} 毫秒`)
+          this.logPrint(`北京时间, ${time_bg.format('YYYY-MM-DD HH:mm:ss')}`)
+          this.logPrint(`本地时间比北京时间快 ${this.time_wucha} 毫秒`)
         })
       },
       getBJTime() {
@@ -81,13 +95,13 @@
         this.testUpdate(this.name, this.mobile)
           .then(data => {
             if (data.r === 0) {
-              console.log('提交成功', moment().format('YYYY-MM-DD HH:mm:ss'))
+              this.logPrint(`提交成功', ${moment().format('YYYY-MM-DD HH:mm:ss')}`)
             } else {
-              console.log('提交失败', moment().format('YYYY-MM-DD HH:mm:ss'), data.r)
+              this.logPrint(`提交失败', ${moment().format('YYYY-MM-DD HH:mm:ss')}, ${data.r}`)
             }
           })
           .catch(() => {
-            console.log('请求失败')
+            this.logPrint('请求失败')
           })
         // this.xiangQiUpdate('哈哈', '16543253567')
       },
@@ -159,6 +173,9 @@
             }
           })
         })
+      },
+      logPrint(msg){
+        this.logInfoArr.unshift(msg)
       }
     },
   }
@@ -179,6 +196,11 @@
     }
     .text-left{
       text-align: left;
+    }
+    .log-div{
+      position: relative;
+      height: 200px;
+      background-color: white;
     }
   }
 
