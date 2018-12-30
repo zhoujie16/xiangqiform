@@ -1,22 +1,61 @@
 <template>
   <div id="app">
-    <div class="text-left">本地时间 比 北京时间快约 {{time_wucha}} 毫秒</div>
-    <div class="text-left">提交的时间</div>
-    <input v-model="timeSel" type="datetime-local" readonly="readonly">
-    <div class="text-left">姓名</div>
-    <input v-model="name" type="text" placeholder="姓名" maxlength="4">
-    <div class="text-left">手机</div>
-    <input v-model="mobile" type="text" placeholder="手机号" maxlength="11">
-    <button ref="submitBtn" @tap="startHandleClick" type="button" class="mui-btn mui-btn-blue">开始</button>
-    <div class="log-div text-left">
-      <!-- <div class="mui-scroll-wrapper"> -->
-      <!-- <div class="mui-scroll"> -->
+    <div class="xq-logo-wrap">
+      <img src="https://s1.ax1x.com/2018/12/30/Ff5YND.png" alt="">
+    </div>
+    <div class="form">
+      <div ref="formTips""" class="form-tips">
+        <div class="xq-title">享骑表单自动提交</div>
+        <div class="xq-time-tips">本地时间 比 北京时间快约 {{time_wucha}} 毫秒</div>
+        <div class="xq-tips">请修改本地时间，尽量控制在1000毫秒以内</div>
+      </div>
+      <div class="label">姓名</div>
+      <cube-input
+        placeholder="输入姓名"
+        v-model="name"
+      ></cube-input>
+      <div class="label">手机号</div>
+      <cube-input
+        v-model="mobile"
+        placeholder="输入手机号"
+      ></cube-input>
+    </div>
+    <div class="btn-wrap">
+      <cube-button :disabled="btnDisabled" :primary="true" @click="startBtnHandleClick">开始</cube-button>
+    </div>
+    <div ref="xqPopur" class="xq-popur">
+      <div class="xq-popur-bg">
+        <div class="now-time">
+          <div>{{time_now.format('YYYY-MM-DD')}}</div>
+          <div>{{time_now.format('HH:mm:ss')}}</div>
+        </div>
+
+        <div class="text-tip">距离{{timeSel.format('MM月DD日')}}9点整</div>
+        <div class="seconds-tip">{{parseInt(-countdown/1000)}}秒</div>
+        <div class="form-content">
+          <div>姓名: {{name}}</div>
+          <div>手机: {{mobile}}</div>
+        </div>
+        <div class="message-tip">数据将在9点整连续提交多次</div>
+      </div>
+
       <div class="log-wrap" ref="logWrap">
         <div :key="i" v-for="(item,i) in logInfoArr_res">{{item}}</div>
       </div>
-      <!-- </div> -->
-      <!-- </div> -->
     </div>
+    <!--<div class="text-left">本地时间 比 北京时间快约 {{time_wucha}} 毫秒</div>-->
+    <!--<div class="text-left">提交的时间</div>-->
+    <!--<input v-model="timeSel" type="datetime-local" readonly="readonly">-->
+    <!--<div class="text-left">姓名</div>-->
+    <!--<input v-model="name" type="text" placeholder="姓名" maxlength="4">-->
+    <!--<div class="text-left">手机</div>-->
+    <!--<input v-model="mobile" type="text" placeholder="手机号" maxlength="11">-->
+    <!--<button ref="submitBtn" @tap="startHandleClick" type="button" class="mui-btn mui-btn-blue">开始</button>-->
+    <!--<div class="log-div text-left">-->
+    <!--<div class="log-wrap" ref="logWrap">-->
+    <!--<div :key="i" v-for="(item,i) in logInfoArr_res">{{item}}</div>-->
+    <!--</div>-->
+    <!--</div>-->
   </div>
 </template>
 
@@ -45,12 +84,13 @@
         moment,
         name: '',
         mobile: '',
-        timeSel: moment().format('YYYY-MM-DDT08:59:59'),
-        // timeSel: moment().format('YYYY-MM-28T00:58:00'),
+        timeSel: moment(moment().format('YYYY-MM-DDT08:59:59')),
         time_wucha: '',//本地时间和北京时间 快 毫秒
         time_now: moment(),//当前时间 动态变化 到点停止
         logInfoArr: [],
         scrollView: null,
+        countdown: 0,//倒计时
+        btnDisabled:true,
       }
     },
     computed: {
@@ -65,12 +105,27 @@
       this.computeTimeDiff()
     },
     methods: {
+      startBtnHandleClick() {
+        if (!(this.name && this.mobile)) {
+          this.$createDialog({
+            type: 'alert',
+            title: '提示',
+            content: '请输入姓名和手机号',
+            icon: 'cubeic-alert'
+          }).show()
+          return
+        }
+        if (moment().diff(this.timeSel)>0) {
+          this.timeSel = this.timeSel.add(1, 'days');
+        }
+        $(this.$refs.xqPopur).addClass('xq-active')
+        this.startHandleClick()
+      },
       startHandleClick() {
-        this.$refs.submitBtn.disabled = true
-        this.$refs.submitBtn.innerHTML = '正在运行...'
         let timer = setInterval(() => {
           this.time_now = moment()
-          if (this.time_now.diff(moment(this.timeSel)) > 0) {
+          this.countdown = this.time_now.diff(this.timeSel)
+          if (this.countdown > 0) {
             //时间到了
             this.logPrint(`${this.time_now.format('HH:mm:ss')}  时间到了`)
             this.updateStart()
@@ -90,8 +145,12 @@
           clearInterval(timer)
           setTimeout(() => {
             this.logPrint(`${moment().format('HH:mm:ss')}  运行结束`)
+            this.$createDialog({
+              type: 'alert',
+              title: '提示',
+              content: '表单提交结束，期待好消息吧',
+            }).show()
           }, 1000)
-          this.$refs.submitBtn.innerHTML = '运行结束'
         }, 3000)
       },
       computeTimeDiff() {
@@ -104,13 +163,32 @@
           this.logPrint(`北京时间, ${time_bg.format('YYYY-MM-DD HH:mm:ss')}`)
           this.logPrint(`本地时间比北京时间快 ${this.time_wucha} 毫秒`)
           this.testMKForm()
+        }).catch(err=>{
+          this.$createDialog({
+            type: 'alert',
+            title: '提示',
+            content: err,
+          }).show()
+          const tips = `
+          当前浏览器不支持跨域，请在PC端使用chrome内核的浏览器，安装跨域插件后使用。
+          下载地址：<a href="http://chromecj.com/web-development/2018-07/1481.html">谷歌跨域扩展插件:Allow-Control-Allow-Origin<a>
+          `
+          $(this.$refs.formTips).html(tips)
         })
       },
       getBJTime() {
         return new Promise((resolve, reject) => {
-          $.get('http://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp', data => {
-            const date = data.data.t
-            resolve(Number(date))
+          $.ajax({
+            url:'http://api.m.taobao.com/rest/api3.do?api=mtop.common.getTimestamp',
+            type: 'get',
+            dataType: 'json',
+            success(data) {
+              const date = data.data.t
+              resolve(Number(date))
+            },
+            error() {
+              reject('当前浏览器不支持跨域，请在PC端使用chrome内核的浏览器，安装跨域插件后使用')
+            }
           })
         })
       },
@@ -143,36 +221,36 @@
               "c": {"cp": {"200992865": name, "200992866": mobile}}
             }
           }
-          if (ENVIRONMENT === 'XQ') {
-            url = XQ_URL
-            params = {
-              "cvs": {
-                "i": 200243921,
-                "t": "JI5p0O4",
-                "s": 200712652,
-                "acc": "1ulXDVmPcXkgiujwkJHY0Ijdrcv5K3q4",
-                "r": "",
-                "c": {"cp": {"202500664": name, "202500665": mobile}, "ext": {}}
-              }
+        }
+        if (ENVIRONMENT === 'XQ') {
+          url = XQ_URL
+          params = {
+            "cvs": {
+              "i": 200243921,
+              "t": "JI5p0O4",
+              "s": 200712652,
+              "acc": "1ulXDVmPcXkgiujwkJHY0Ijdrcv5K3q4",
+              "r": "",
+              "c": {"cp": {"202500664": name, "202500665": mobile}, "ext": {}}
             }
           }
-          return new Promise((resolve, reject) => {
-            $.ajax({
-              url,
-              type: 'post',
-              dataType: 'json',
-              data: {
-                d: JSON.stringify(params)
-              },
-              success(data) {
-                resolve(data);
-              },
-              error(data) {
-                reject(data)
-              }
-            })
-          })
         }
+        return new Promise((resolve, reject) => {
+          $.ajax({
+            url,
+            type: 'post',
+            dataType: 'json',
+            data: {
+              d: JSON.stringify(params)
+            },
+            success(data) {
+              resolve(data);
+            },
+            error(data) {
+              reject(data)
+            }
+          })
+        })
       },
       testMKForm() {
         this.logPrint(`${moment().format('HH:mm:ss')} 检测表单页面`)
@@ -181,18 +259,34 @@
           .then(data => {
             if (data === '') {
               this.logPrint(`${moment().format('HH:mm:ss')} 你的IP可能被限制访问`)
-              mui.alert('你的IP可能被限制访问')
+              this.$createDialog({
+                type: 'alert',
+                title: '提示',
+                content: '你的IP可能被限制访问',
+                icon: 'cubeic-alert'
+              }).show()
               return
             }
             if (data.indexOf('SOUL') === -1) {
               this.logPrint(`${moment().format('HH:mm:ss')} 你要提交的表单已经失效`)
-              mui.alert('你要提交的表单已经失效')
+              this.$createDialog({
+                type: 'alert',
+                title: '提示',
+                content: '你要提交的表单已经失效',
+                icon: 'cubeic-alert'
+              }).show()
               return
             }
             this.logPrint(`${moment().format('HH:mm:ss')} 检测表单数据正常`)
+            this.btnDisabled = false
           })
           .catch(err => {
-            mui.alert(err)
+            this.$createDialog({
+              type: 'alert',
+              title: '提示',
+              content: err,
+              icon: 'cubeic-alert'
+            }).show()
           })
 
         function ajaxAction() {
@@ -218,34 +312,131 @@
 </script>
 
 <style lang="scss" type="text/scss">
+  body {
+    text-align: center;
+  }
+
   #app {
     position: relative;
     display: inline-block;
     width: 350px;
-    margin-left: 50%;
-    transform: translateX(-50%);
-    text-align: center;
+    height: 99vh;
+    text-align: initial;
+    overflow: hidden;
 
-    .mui-btn {
+    .xq-logo-wrap {
+      img {
+        width: 100%;
+      }
+    }
+
+    .btn-wrap {
+      padding: 30px 20px;
+
+    }
+
+    .form {
+      padding: 0 20px;
+
+      .xq-title {
+        font-size: 25px;
+        text-align: center;
+        line-height: 25px;
+        margin: 10px 0;
+      }
+
+      .xq-time-tips {
+        font-size: 14px;
+        padding: 2px 0;
+        text-align: center;
+        color: gray;
+      }
+
+      .xq-tips {
+        font-size: 14px;
+        padding: 2px 0;
+        text-align: center;
+        color: gray;
+      }
+
+      .label {
+        height: 40px;
+        line-height: 40px;
+        margin-top: 15px;
+      }
+
+    }
+  }
+
+  #app .xq-popur {
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(111, 111, 111, .3);
+    background-color: #ffffff;
+    position: absolute;
+    top: 99vh;
+    left: 0;
+    transition: top .3s ease;
+
+    .xq-popur-bg {
+      background-color: #4cd964;
+      padding: 15px 0;
+
+    }
+
+    .now-time {
+      font-size: 30px;
+      line-height: 40px;
+      text-align: center;
+    }
+
+    .text-tip {
+      font-size: 30px;
+      line-height: 40px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .seconds-tip {
+      font-size: 50px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .form-content {
+      font-size: 20px;
+      line-height: 25px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .message-tip {
+      font-size: 20px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .log-wrap {
+      position: absolute;
+      height: calc(99vh - 365px);
       width: 100%;
-      margin-bottom: 15px;
-    }
-
-    .text-left {
-      text-align: left;
-    }
-
-    .log-div {
-      position: relative;
-      height: 200px;
-      background-color: white;
-      overflow: hidden;
+      left: 0;
+      bottom: 30px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, .2);
       overflow-y: scroll;
+
+      & > div {
+        width: calc(100% - 20px);
+        display: inline-block;
+        font-size: 18px;
+        margin: 10px 0;
+        overflow: hidden;
+      }
     }
 
-    .log-wrap > div {
-      height: 30px;
-      line-height: 30px;
+    &.xq-active {
+      top: 0;
     }
   }
 
