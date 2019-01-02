@@ -58,6 +58,7 @@
   /////////////
   const TEST_URL = 'http://ka7js75mkc9i2gnz.mikecrm.com/handler/web/form_runtime/handleSubmit.php'
   //test: {"cvs":{"i":200103402,"t":"OaFtcNB","s":200238984,"acc":"TIXaEDgbjvYpGW0lLaGnmHpnavB798sm","r":"","c":{"cp":{"200992865":"11111","200992866":"11111"}}}}
+  // const XQ_URL = 'http://gis1z4xshb2s37ki.mikecrm.com/handler/web/form_runtime/handleSubmit.php'
   const XQ_URL = 'http://gis1z4xshb2s37ki.mikecrm.com/handler/web/form_runtime/handleSubmit.php'
   //12-27: {"cvs":{"i":200241815,"t":"dcSGLtc","s":200710795,"acc":"YGtEHjWUXSBV2nlMggbzeklRaAB5MCGD","r":"","c":{"cp":{"202474905":name,"202474906":mobile},"ext":{}}}}
   //12-28: {"cvs":{"i":200243921,"t":"JI5p0O4","s":200712652,"acc":"1ulXDVmPcXkgiujwkJHY0Ijdrcv5K3q4","r":"","c":{"cp":{"202500664":"周杰","202500665":"17756202920"},"ext":{}}}}
@@ -69,9 +70,9 @@
     data() {
       return {
         moment,
-        name: '',
-        mobile: '',
-        timeSel: moment(moment().format('YYYY-MM-DDT08:59:59')),
+        name: '周杰',
+        mobile: '17756202920',
+        timeSel: moment(moment().format('YYYY-MM-DDT08:59:58')),
         time_wucha: '',//本地时间和北京时间 快 毫秒
         time_now: moment(),//当前时间 动态变化 到点停止
         logInfoArr: [],
@@ -103,7 +104,7 @@
           return
         }
         if (moment().diff(this.timeSel) > 0) {
-          this.timeSel = this.timeSel.add(1, 'days');
+          // this.timeSel = this.timeSel.add(1, 'days');
         }
         $(this.$refs.xqPopur).addClass('xq-active')
         this.startHandleClick()
@@ -215,10 +216,16 @@
             "cvs": {
               "i": 200243921,
               "t": "JI5p0O4",
-              "s": 200712652,
-              "acc": "1ulXDVmPcXkgiujwkJHY0Ijdrcv5K3q4",
+              "s": 200714354,
+              "acc": "20MksL9CVMisMw8zi9pmexm1USgjJBTO",
               "r": "",
-              "c": {"cp": {"202500664": name, "202500665": mobile}, "ext": {}}
+              "c": {
+                "cp": {
+                  "202500664": name,
+                  "202500665": mobile
+                },
+                "ext": {}
+              }
             }
           }
         }
