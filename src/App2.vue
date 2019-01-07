@@ -1,17 +1,45 @@
 <template>
   <div id="app">
+    <div class="xq-logo-wrap">
+      <img src="https://s1.ax1x.com/2018/12/30/Ff5YND.png" alt="">
+    </div>
     <div class="form">
       <div ref="formTips" class="form-tips">
         <div class="xq-title">享骑表单自动提交</div>
         <div class="xq-time-tips">本地时间 比 北京时间快约 {{time_wucha}} 毫秒</div>
+        <div class="xq-tips">请修改本地时间，尽量控制在1000毫秒以内</div>
       </div>
+      <div class="label">姓名</div>
+      <cube-input
+        placeholder="输入姓名"
+        v-model="name"
+      ></cube-input>
+      <div class="label">手机号</div>
+      <cube-input
+        v-model="mobile"
+        placeholder="输入手机号"
+      ></cube-input>
     </div>
-    <div class="console-div" style="padding: 10px;">
-      <div>{{time_now.format('YYYY-MM-DD HH:mm:ss')}}</div>
-      <div>距离{{timeSel.format('MM月DD日')}}9点整</div>
-      <div>{{parseInt(-countdown/1000)}}秒</div>
-      <div>数据将在9点整连续提交多次</div>
-      <div class="log-wrap">
+    <div class="btn-wrap">
+      <cube-button :disabled="btnDisabled" :primary="true" @click="startBtnHandleClick">开始</cube-button>
+    </div>
+    <div ref="xqPopur" class="xq-popur">
+      <div class="xq-popur-bg">
+        <div class="now-time">
+          <div>{{time_now.format('YYYY-MM-DD')}}</div>
+          <div>{{time_now.format('HH:mm:ss')}}</div>
+        </div>
+
+        <div class="text-tip">距离{{timeSel.format('MM月DD日')}}9点整</div>
+        <div class="seconds-tip">{{parseInt(-countdown/1000)}}秒</div>
+        <div class="form-content">
+          <div>姓名: {{name}}</div>
+          <div>手机: {{mobile}}</div>
+        </div>
+        <div class="message-tip">数据将在9点整连续提交多次</div>
+      </div>
+
+      <div class="log-wrap" ref="logWrap">
         <div :key="i" v-for="(item,i) in logInfoArr_res">{{item}}</div>
       </div>
     </div>
@@ -44,15 +72,13 @@
         moment,
         name: '周杰',
         mobile: '17756202920',
-        timeSel: moment(moment().format('YYYY-MM-DDT08:59:59')),
-        // timeSel: moment(moment().format('YYYY-MM-DDT00:00:00')),
+        timeSel: moment(moment().format('YYYY-MM-DDT08:59:58')),
         time_wucha: '',//本地时间和北京时间 快 毫秒
         time_now: moment(),//当前时间 动态变化 到点停止
         logInfoArr: [],
         scrollView: null,
         countdown: 0,//倒计时
         btnDisabled: true,
-        timer_update: {}
       }
     },
     computed: {
@@ -62,36 +88,58 @@
     },
     mounted() {
       window._self = this
+      // this.scrollView = mui('.mui-scroll-wrapper').scroll()
       this.logPrint(`${moment().format('HH:mm:ss')}  页面加载完成`)
       this.computeTimeDiff()
-      var timer = setInterval(() => {
-        console.log(timer)
-        this.time_now = moment()
-        this.countdown = this.time_now.diff(this.timeSel)
-        if (this.countdown > 0) {
-          //时间到了
-          this.logPrint(`${this.time_now.format('HH:mm:ss')}  时间到了`)
-          this.updateStart()
-          clearInterval(timer)
-        } else {
-          this.logPrint(`${this.time_now.format('HH:mm:ss')}  正在等待...`)
-        }
-      }, 500)
-
     },
     methods: {
-
+      startBtnHandleClick() {
+        if (!(this.name && this.mobile)) {
+          this.$createDialog({
+            type: 'alert',
+            title: '提示',
+            content: '请输入姓名和手机号',
+            icon: 'cubeic-alert'
+          }).show()
+          return
+        }
+        if (moment().diff(this.timeSel) > 0) {
+          // this.timeSel = this.timeSel.add(1, 'days');
+        }
+        $(this.$refs.xqPopur).addClass('xq-active')
+        this.startHandleClick()
+      },
+      startHandleClick() {
+        let timer = setInterval(() => {
+          this.time_now = moment()
+          this.countdown = this.time_now.diff(this.timeSel)
+          if (this.countdown > 0) {
+            //时间到了
+            this.logPrint(`${this.time_now.format('HH:mm:ss')}  时间到了`)
+            this.updateStart()
+            clearInterval(timer)
+          } else {
+            this.logPrint(`${this.time_now.format('HH:mm:ss')}  正在等待...`)
+          }
+        }, 500)
+      },
       //
       updateStart() {
-        let index = 0
         this.logPrint(`${moment().format('HH:mm:ss')}  开始提交`)
-        this.timer_update = setInterval(() => {
-          index += 1
+        let timer = setInterval(() => {
           this.formAction()
-          if (index === 10) {
-            clearInterval(this.timer_update)
-          }
         }, 300)
+        setTimeout(() => {
+          clearInterval(timer)
+          setTimeout(() => {
+            this.logPrint(`${moment().format('HH:mm:ss')}  运行结束`)
+            this.$createDialog({
+              type: 'alert',
+              title: '提示',
+              content: '表单提交结束，期待好消息吧',
+            }).show()
+          }, 1000)
+        }, 3000)
       },
       computeTimeDiff() {
         //计算时间误差
@@ -109,11 +157,11 @@
             title: '提示',
             content: err,
           }).show()
-          // const tips = `
-          // 当前浏览器不支持跨域，请在PC端使用chrome内核的浏览器，安装跨域插件后使用。
-          // 下载地址：<a href="http://chromecj.com/web-development/2018-07/1481.html">谷歌跨域扩展插件:Allow-Control-Allow-Origin<a>
-          // `
-          // $(this.$refs.formTips).html(tips)
+          const tips = `
+          当前浏览器不支持跨域，请在PC端使用chrome内核的浏览器，安装跨域插件后使用。
+          下载地址：<a href="http://chromecj.com/web-development/2018-07/1481.html">谷歌跨域扩展插件:Allow-Control-Allow-Origin<a>
+          `
+          $(this.$refs.formTips).html(tips)
         })
       },
       getBJTime() {
@@ -133,23 +181,16 @@
         })
       },
       formAction() {
-        this.testUpdate('周杰', '17756202920')
+        this.testUpdate(this.name, this.mobile)
           .then((data) => {
-            this.logPrint(`${moment().format('HH:mm:ss')}  提交成功 17521282018`)
-            clearInterval(this.timer_update)
-            this.formAction2()
+            if (data.r === 0) {
+              this.logPrint(`${moment().format('HH:mm:ss')}  提交成功`)
+            } else {
+              this.logPrint(`${moment().format('HH:mm:ss')}  提交失败  ${data.r}`)
+            }
           })
           .catch((data) => {
-            this.logPrint(`${moment().format('HH:mm:ss')}  提交失败  ${JSON.stringify(data)}`)
-          })
-      },
-      formAction2() {
-        this.testUpdate('周晓庆', '17521282018')
-          .then((data) => {
-            this.logPrint(`${moment().format('HH:mm:ss')}  提交成功  17756202920`)
-          })
-          .catch((data) => {
-            this.logPrint(`${moment().format('HH:mm:ss')}  提交失败  ${data}`)
+            this.logPrint(`请求失败`)
           })
       },
       testUpdate(name, mobile) {
@@ -162,8 +203,8 @@
             "cvs": {
               "i": 200103402,
               "t": "OaFtcNB",
-              "s": 200250277,
-              "acc": "OXXu8k4pS6PRgubAidiP0ODNra5WLsQk",
+              "s": 200239023,
+              "acc": "3tvYej4CTjQJx0k9rZJ678xHQ3ndoi1q",
               "r": "",
               "c": {"cp": {"200992865": name, "200992866": mobile}}
             }
@@ -197,11 +238,7 @@
               d: JSON.stringify(params)
             },
             success(data) {
-              if (data.r === 0) {
-                resolve(data);
-              } else {
-                reject(data)
-              }
+              resolve(data);
             },
             error(data) {
               reject(data)
@@ -276,14 +313,24 @@
   #app {
     position: relative;
     display: inline-block;
-    width: 100vw;
-    height: 100vh;
+    width: 350px;
+    height: 99vh;
     text-align: initial;
     overflow: hidden;
 
+    .xq-logo-wrap {
+      img {
+        width: 100%;
+      }
+    }
+
+    .btn-wrap {
+      padding: 30px 20px;
+
+    }
 
     .form {
-      padding: 10px;
+      padding: 0 20px;
 
       .xq-title {
         font-size: 25px;
@@ -312,12 +359,79 @@
         margin-top: 15px;
       }
 
-      .btn-wrap {
-        padding: 10px 0px;
-
-      }
     }
   }
 
+  #app .xq-popur {
+    width: 100%;
+    height: 100vh;
+    background-color: rgba(111, 111, 111, .3);
+    background-color: #ffffff;
+    position: absolute;
+    top: 99vh;
+    left: 0;
+    transition: top .3s ease;
+
+    .xq-popur-bg {
+      background-color: #4cd964;
+      padding: 15px 0;
+
+    }
+
+    .now-time {
+      font-size: 30px;
+      line-height: 40px;
+      text-align: center;
+    }
+
+    .text-tip {
+      font-size: 30px;
+      line-height: 40px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .seconds-tip {
+      font-size: 50px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .form-content {
+      font-size: 20px;
+      line-height: 25px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .message-tip {
+      font-size: 20px;
+      text-align: center;
+      margin: 10px 0;
+    }
+
+    .log-wrap {
+      position: absolute;
+      height: calc(99vh - 365px);
+      width: 100%;
+      left: 0;
+      bottom: 30px;
+      padding: 10px;
+      background-color: rgba(0, 0, 0, .2);
+      overflow-y: scroll;
+
+      & > div {
+        width: calc(100% - 20px);
+        display: inline-block;
+        font-size: 18px;
+        margin: 10px 0;
+        overflow: hidden;
+      }
+    }
+
+    &.xq-active {
+      top: 0;
+    }
+  }
 
 </style>
